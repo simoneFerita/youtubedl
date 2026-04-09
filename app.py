@@ -236,3 +236,8 @@ def download():
     except Exception as exc:
         message = str(exc).strip().splitlines()[0]
         return jsonify({"error": f"Errore durante il download: {message}"}), 400
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
+
