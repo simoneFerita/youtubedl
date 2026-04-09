@@ -1,6 +1,5 @@
 from __future__ import annotations
 import os
-
 import re
 import shutil
 import tempfile
@@ -9,10 +8,27 @@ from urllib.parse import urlparse
 
 import yt_dlp
 from flask_cors import CORS
-from flask import Flask, after_this_request, jsonify, render_template, request, send_file, send_from_directory
+from flask import (
+    Flask,
+    after_this_request,
+    jsonify,
+    render_template,
+    request,
+    send_file,
+    send_from_directory,
+)
 
 app = Flask(__name__)
-CORS_ORIGINS = [item.strip() for item in os.getenv("YTDL_CORS_ORIGINS", "*").split(",") if item.strip()]
+
+# ---------------------------------------------------------
+# CORS
+# ---------------------------------------------------------
+CORS_ORIGINS = [
+    item.strip()
+    for item in os.getenv("YTDL_CORS_ORIGINS", "*").split(",")
+    if item.strip()
+]
+
 CORS(
     app,
     resources={
@@ -22,7 +38,14 @@ CORS(
     },
 )
 
-SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9\+\-\/\.\,\[\]\(\):]+$")
+# ---------------------------------------------------------
+# VALIDAZIONI
+# ---------------------------------------------------------
+SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9\+\-\/\.\,
+
+\[\]
+
+\(\):]+$")
 
 
 def _is_valid_url(url: str) -> bool:
@@ -30,6 +53,9 @@ def _is_valid_url(url: str) -> bool:
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
+# ---------------------------------------------------------
+# FORMAT HANDLING
+# ---------------------------------------------------------
 def _format_kind(fmt: dict) -> str:
     has_video = fmt.get("vcodec") != "none"
     has_audio = fmt.get("acodec") != "none"
@@ -69,6 +95,9 @@ def _build_selector(fmt: dict) -> str:
     return format_id
 
 
+# ---------------------------------------------------------
+# YT-DLP EXTRACTION
+# ---------------------------------------------------------
 def _extract_info(url: str) -> dict:
     ydl_opts = {
         "quiet": True,
@@ -126,6 +155,9 @@ def _serialized_formats(info: dict) -> list[dict]:
     return available_formats
 
 
+# ---------------------------------------------------------
+# FILE PICKER
+# ---------------------------------------------------------
 def _pick_downloaded_file(temp_dir: Path, info: dict, ydl: yt_dlp.YoutubeDL) -> Path:
     prepared_name = Path(ydl.prepare_filename(info))
     if prepared_name.exists():
@@ -148,6 +180,9 @@ def _pick_downloaded_file(temp_dir: Path, info: dict, ydl: yt_dlp.YoutubeDL) -> 
     return produced_files[0]
 
 
+# ---------------------------------------------------------
+# PATH BASE
+# ---------------------------------------------------------
 def _api_base_path() -> str:
     if request.path.startswith("/youtubedl"):
         return "/youtubedl"
@@ -156,17 +191,25 @@ def _api_base_path() -> str:
     return ""
 
 
+# ---------------------------------------------------------
+# ROUTES
+# ---------------------------------------------------------
 @app.get("/")
 @app.get("/youtubedl")
 @app.get("/youtubedownload")
 def index():
     return render_template("index.html", api_base_path=_api_base_path())
+
+
 @app.get("/youtubedl/static/<path:filename>")
 @app.get("/youtubedownload/static/<path:filename>")
 def static_alias(filename: str):
     return send_from_directory(app.static_folder, filename)
 
 
+# ---------------------------------------------------------
+# API: FORMATS
+# ---------------------------------------------------------
 @app.post("/api/formats")
 @app.post("/youtubedl/api/formats")
 @app.post("/youtubedownload/api/formats")
@@ -190,6 +233,9 @@ def get_formats():
         return jsonify({"error": f"Impossibile leggere i formati: {message}"}), 400
 
 
+# ---------------------------------------------------------
+# API: DOWNLOAD
+# ---------------------------------------------------------
 @app.post("/api/download")
 @app.post("/youtubedl/api/download")
 @app.post("/youtubedownload/api/download")
@@ -211,26 +257,16 @@ def download():
         shutil.rmtree(temp_dir, ignore_errors=True)
         return response
 
-    try:
-        ydl_opts = {
-            "format": selector,
-            "outtmpl": str(temp_dir / "%(title).120s.%(ext)s"),
-            "noplaylist": True,
-            "quiet": True,
-            "no_warnings": True,
-            "restrictfilenames": True,
-            "merge_output_format": "mp4",
-        }
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "format": selector,
+        "outtmpl": str(temp_dir / "%(title)s.%(ext)s"),
+    }
 
+    try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-
-            if "entries" in info:
-                entries = info.get("entries") or []
-                if not entries:
-                    raise ValueError("Nessun elemento scaricabile trovato.")
-                info = entries[0]
-
             file_path = _pick_downloaded_file(temp_dir, info, ydl)
 
         return send_file(
@@ -238,13 +274,14 @@ def download():
             as_attachment=True,
             download_name=file_path.name,
         )
-    except yt_dlp.utils.DownloadError as exc:
-        message = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Errore download: {message}"}), 400
+
     except Exception as exc:
         message = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Errore interno: {message}"}), 500
+        return jsonify({"error": f"Errore durante il download: {message}"}), 400
 
 
+# ---------------------------------------------------------
+# MAIN
+# ---------------------------------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    app.run(debug=True)
