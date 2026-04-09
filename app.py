@@ -225,7 +225,7 @@ def download():
         return response
 
     # Cookie YouTube (file in youtubedl/cookies.txt)
-    cookies_path = Path("youtubedl/cookies.txt")
+    cookies_path = Path("youtubedl/blob/main/cookies.txt")
     use_cookies = cookies_path.exists()
 
     ydl_opts: dict = {
