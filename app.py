@@ -32,7 +32,11 @@ CORS(
 )
 
 # Regex per il selector dei formati
-SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,\[\]\(\):]+$")
+SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,
+
+\[\]
+
+\(\):]+$")
 
 
 def _is_valid_url(url: str) -> bool:
@@ -223,11 +227,11 @@ def download():
         shutil.rmtree(temp_dir, ignore_errors=True)
         return response
 
-    # Cookie YouTube (file in youtubedl/cookies.txt)
+    # Cookie YouTube
     cookies_path = Path("youtubedl/cookies.txt")
     use_cookies = cookies_path.exists()
 
-    ydl_opts: dict = {
+    ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "format": selector,
