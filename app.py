@@ -262,7 +262,7 @@ def cookie_status():
     - dimensione
     - tentativo di chiamata yt-dlp con cookies (senza download)
     """
-    cookies_path = Path("youtubedl/cookies.txt")
+    cookies_path = Path("youtubedl/blob/main/cookies.txt")
     exists = cookies_path.exists()
     size = cookies_path.stat().st_size if exists else 0
 
