@@ -8,7 +8,15 @@ from urllib.parse import urlparse
 
 import yt_dlp
 from flask_cors import CORS
-from flask import Flask, after_this_request, jsonify, render_template, request, send_file, send_from_directory
+from flask import (
+    Flask,
+    after_this_request,
+    jsonify,
+    render_template,
+    request,
+    send_file,
+    send_from_directory,
+)
 
 app = Flask(__name__)
 
@@ -23,8 +31,12 @@ CORS(
     },
 )
 
-# REGEX CORRETTA (questa causava il crash)
-SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,\[\]\(\):]+$")
+# Regex per il selector dei formati
+SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,
+
+\[\]
+
+\(\):]+$")
 
 
 def _is_valid_url(url: str) -> bool:
@@ -215,18 +227,19 @@ def download():
         shutil.rmtree(temp_dir, ignore_errors=True)
         return response
 
+    # Cookie YouTube (file in youtubedl/cookies.txt)
     cookies_path = Path("youtubedl/cookies.txt")
-use_cookies = cookies_path.exists()
+    use_cookies = cookies_path.exists()
 
+    ydl_opts: dict = {
+        "quiet": True,
+        "no_warnings": True,
+        "format": selector,
+        "outtmpl": str(temp_dir / "%(title)s.%(ext)s"),
+    }
 
-    ydl_opts = {
-    "quiet": True,
-    "no_warnings": True,
-    "format": selector,
-    "outtmpl": str(temp_dir / "%(title)s.%(ext)s"),
-    "cookies": "cookies.txt",
-}
-
+    if use_cookies:
+        ydl_opts["cookies"] = str(cookies_path)
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -243,7 +256,7 @@ use_cookies = cookies_path.exists()
         message = str(exc).strip().splitlines()[0]
         return jsonify({"error": f"Errore durante il download: {message}"}), 400
 
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
