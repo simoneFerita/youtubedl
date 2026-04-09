@@ -1,13 +1,3 @@
-# Netscape HTTP Cookie File
-# https://curl.haxx.se/rfc/cookie_spec.html
-# This is a generated file! Do not edit.
-
-.mozilla.org	TRUE	/	FALSE	1809449523	_ga_2VC139B3XV	GS2.1.s1774889523$o1$g0$t1774889523$j60$l0$h0
-.mozilla.org	TRUE	/	FALSE	1810287254	_ga	GA1.1.316155371.1774889523
-addons.mozilla.org	FALSE	/	TRUE	0	taarId	aa0f7391397d87a50637c8b471fa6eb7655a97ba2696ed2d16a506db19e3c3b2
-.mozilla.org	TRUE	/	FALSE	1810287328	_ga_B9CY1C9VBC	GS2.1.s1775727254$o1$g1$t1775727328$j60$l0$h0
-
-
-cookies_path = Path("cookies.txt")
+ookies_path = Path("cookies.txt")
 use_cookies = cookies_path.exists()
 
