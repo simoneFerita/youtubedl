@@ -7,29 +7,13 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import yt_dlp
-from flask import (
-    Flask,
-    jsonify,
-    render_template,
-    request,
-    send_file,
-    send_from_directory,
-    after_this_request,
-)
 from flask_cors import CORS
+from flask import Flask, after_this_request, jsonify, render_template, request, send_file, send_from_directory
 
-# ---------------------------------------------------------
-# CONFIGURAZIONE FLASK
-# ---------------------------------------------------------
+app = Flask(__name__)
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
-
-CORS_ORIGINS = [
-    item.strip()
-    for item in os.getenv("YTDL_CORS_ORIGINS", "*").split(",")
-    if item.strip()
-]
-
+# CORS
+CORS_ORIGINS = [item.strip() for item in os.getenv("YTDL_CORS_ORIGINS", "*").split(",") if item.strip()]
 CORS(
     app,
     resources={
@@ -39,16 +23,13 @@ CORS(
     },
 )
 
-SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9\+\-\/\.\,
+# REGEX CORRETTA (questa causava il crash)
+SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,
 
 \[\]
 
 \(\):]+$")
 
-
-# ---------------------------------------------------------
-# FUNZIONI DI SUPPORTO
-# ---------------------------------------------------------
 
 def _is_valid_url(url: str) -> bool:
     parsed = urlparse(url)
@@ -114,7 +95,7 @@ def _extract_info(url: str) -> dict:
 
 
 def _serialized_formats(info: dict) -> list[dict]:
-    available = []
+    available_formats: list[dict] = []
 
     for fmt in info.get("formats", []):
         if not fmt.get("format_id"):
@@ -122,7 +103,7 @@ def _serialized_formats(info: dict) -> list[dict]:
         if fmt.get("vcodec") == "none" and fmt.get("acodec") == "none":
             continue
 
-        available.append(
+        available_formats.append(
             {
                 "format_id": str(fmt.get("format_id")),
                 "ext": fmt.get("ext") or "",
@@ -137,40 +118,40 @@ def _serialized_formats(info: dict) -> list[dict]:
             }
         )
 
-    available.sort(
-        key=lambda x: (
-            x["kind"] != "solo audio",
-            x["height"],
-            x["fps"],
-            x["abr"],
-            x["filesize"],
+    available_formats.sort(
+        key=lambda item: (
+            item["kind"] != "solo audio",
+            item["height"],
+            item["fps"],
+            item["abr"],
+            item["filesize"],
         ),
         reverse=True,
     )
 
-    return available
+    return available_formats
 
 
 def _pick_downloaded_file(temp_dir: Path, info: dict, ydl: yt_dlp.YoutubeDL) -> Path:
-    prepared = Path(ydl.prepare_filename(info))
-    if prepared.exists():
-        return prepared
+    prepared_name = Path(ydl.prepare_filename(info))
+    if prepared_name.exists():
+        return prepared_name
 
     for item in info.get("requested_downloads") or []:
-        fp = item.get("filepath")
-        if fp and Path(fp).exists():
-            return Path(fp)
+        maybe_path = item.get("filepath")
+        if maybe_path and Path(maybe_path).exists():
+            return Path(maybe_path)
 
-    produced = sorted(
+    produced_files = sorted(
         temp_dir.glob("*"),
-        key=lambda p: p.stat().st_mtime,
+        key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
 
-    if not produced:
+    if not produced_files:
         raise FileNotFoundError("Nessun file scaricato.")
 
-    return produced[0]
+    return produced_files[0]
 
 
 def _api_base_path() -> str:
@@ -180,10 +161,6 @@ def _api_base_path() -> str:
         return "/youtubedownload"
     return ""
 
-
-# ---------------------------------------------------------
-# ROUTES FRONTEND
-# ---------------------------------------------------------
 
 @app.get("/")
 @app.get("/youtubedl")
@@ -197,10 +174,6 @@ def index():
 def static_alias(filename: str):
     return send_from_directory(app.static_folder, filename)
 
-
-# ---------------------------------------------------------
-# API: FORMATS
-# ---------------------------------------------------------
 
 @app.post("/api/formats")
 @app.post("/youtubedl/api/formats")
@@ -221,13 +194,9 @@ def get_formats():
             }
         )
     except Exception as exc:
-        msg = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Impossibile leggere i formati: {msg}"}), 400
+        message = str(exc).strip().splitlines()[0]
+        return jsonify({"error": f"Impossibile leggere i formati: {message}"}), 400
 
-
-# ---------------------------------------------------------
-# API: DOWNLOAD
-# ---------------------------------------------------------
 
 @app.post("/api/download")
 @app.post("/youtubedl/api/download")
@@ -269,13 +238,5 @@ def download():
         )
 
     except Exception as exc:
-        msg = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Errore durante il download: {msg}"}), 400
-
-
-# ---------------------------------------------------------
-# AVVIO (solo locale)
-# ---------------------------------------------------------
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+        message = str(exc).strip().splitlines()[0]
+        return jsonify({"error": f"Errore durante il download: {message}"}), 400
