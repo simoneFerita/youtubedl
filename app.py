@@ -80,7 +80,6 @@ def _build_selector(fmt: dict) -> str:
 
 
 def _extract_info(url: str) -> dict:
-    # NOTA: qui NON usiamo i cookie, è solo per /api/formats
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
@@ -224,11 +223,10 @@ def download():
         shutil.rmtree(temp_dir, ignore_errors=True)
         return response
 
-    # Cookie YouTube (file in youtubedl/cookies.txt)
     cookies_path = Path("youtubedl/cookies.txt")
     use_cookies = cookies_path.exists()
 
-    ydl_opts: dict = {
+    ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "format": selector,
@@ -256,29 +254,20 @@ def download():
 
 @app.get("/cookie-status")
 def cookie_status():
-    """
-    Controllo rapido:
-    - esistenza del file cookies.txt
-    - dimensione
-    - tentativo di chiamata yt-dlp con cookies (senza download)
-    """
     cookies_path = Path("youtubedl/cookies.txt")
     exists = cookies_path.exists()
     size = cookies_path.stat().st_size if exists else 0
 
-    # URL di test: puoi cambiarlo se vuoi
     test_url = request.args.get("url", "https://www.youtube.com/watch?v=KQetemT1sWc")
 
     if not exists:
-        return jsonify(
-            {
-                "cookies_exists": False,
-                "cookies_size": 0,
-                "test_url": test_url,
-                "yt_dlp_ok": False,
-                "yt_dlp_error": "cookies.txt non trovato",
-            }
-        )
+        return jsonify({
+            "cookies_exists": False,
+            "cookies_size": 0,
+            "test_url": test_url,
+            "yt_dlp_ok": False,
+            "yt_dlp_error": "cookies.txt non trovato"
+        })
 
     ydl_opts = {
         "quiet": True,
@@ -289,29 +278,25 @@ def cookie_status():
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            # solo info, niente download
             ydl.extract_info(test_url, download=False)
 
-        return jsonify(
-            {
-                "cookies_exists": True,
-                "cookies_size": size,
-                "test_url": test_url,
-                "yt_dlp_ok": True,
-                "yt_dlp_error": None,
-            }
-        )
+        return jsonify({
+            "cookies_exists": True,
+            "cookies_size": size,
+            "test_url": test_url,
+            "yt_dlp_ok": True,
+            "yt_dlp_error": None
+        })
+
     except Exception as exc:
         message = str(exc).strip().splitlines()[0]
-        return jsonify(
-            {
-                "cookies_exists": True,
-                "cookies_size": size,
-                "test_url": test_url,
-                "yt_dlp_ok": False,
-                "yt_dlp_error": message,
-            }
-        )
+        return jsonify({
+            "cookies_exists": True,
+            "cookies_size": size,
+            "test_url": test_url,
+            "yt_dlp_ok": False,
+            "yt_dlp_error": message
+        })
 
 
 if __name__ == "__main__":
