@@ -216,11 +216,13 @@ def download():
         return response
 
     ydl_opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "format": selector,
-        "outtmpl": str(temp_dir / "%(title)s.%(ext)s"),
-    }
+    "quiet": True,
+    "no_warnings": True,
+    "format": selector,
+    "outtmpl": str(temp_dir / "%(title)s.%(ext)s"),
+    "cookies": "cookies.txt",
+}
+
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
