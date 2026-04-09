@@ -1,13 +1,5 @@
 [build]
-builder = "paketobuildpacks/builder:base"
+buildCommand = "pip install -r requirements.txt"
 
-[build.env]
-BP_CPYTHON_VERSION = "3.11.*"
-BP_PIP_VERSION = "latest"
-BP_PIP_INSTALL_OPTIONS = "--upgrade pip"
-
-[[build.buildpacks]]
-uri = "paketo-buildpacks/python"
-
-[[build.buildpacks]]
-uri = "paketo-buildpacks/ffmpeg"
+[deploy]
+startCommand = "python app.py"
