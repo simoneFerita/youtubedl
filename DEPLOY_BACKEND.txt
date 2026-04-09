@@ -1,0 +1,19 @@
+Backend Python (Flask + yt-dlp) - Note deploy rapide
+
+1) Installa dipendenze:
+   pip install -r requirements.txt
+
+2) Imposta variabili ambiente:
+   - YTDL_CORS_ORIGINS=https://simoneferita.altervista.org
+     (se hai più origini: separale con virgola)
+
+3) Avvio locale:
+   python app.py
+
+4) Endpoint usati dal frontend:
+   - POST /api/formats
+   - POST /api/download
+
+5) Requisiti runtime:
+   - ffmpeg disponibile nel PATH del server
+   - hosting che supporti processi Python web (Flask/WSGI)

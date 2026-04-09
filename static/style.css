@@ -1,0 +1,93 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #10141b;
+    color: #eaf0ff;
+}
+
+.container {
+    width: min(920px, 92vw);
+    margin: 2rem auto;
+}
+
+h1 {
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #b9c5dd;
+    margin-top: 0;
+}
+
+.card {
+    background: #182030;
+    border: 1px solid #283247;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+input,
+select,
+button {
+    width: 100%;
+    border-radius: 8px;
+    border: 1px solid #3b4a69;
+    background: #0f1725;
+    color: #eaf0ff;
+    padding: 0.7rem;
+}
+
+input,
+select {
+    margin-bottom: 0.8rem;
+}
+
+button {
+    cursor: pointer;
+    background: #315ee9;
+    border-color: #315ee9;
+    font-weight: 700;
+}
+
+button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.status {
+    min-height: 1.5rem;
+    margin-top: 0.2rem;
+}
+
+.status.info {
+    color: #78b7ff;
+}
+
+.status.ok {
+    color: #74e08e;
+}
+
+.status.error {
+    color: #ff9191;
+}
+
+.hidden {
+    display: none;
+}
+
+.hint {
+    margin-top: 0.75rem;
+    color: #b9c5dd;
+    font-size: 0.92rem;
+}

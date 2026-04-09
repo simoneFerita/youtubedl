@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Downloader Video/Musica</title>
+    <link rel="stylesheet" href="{{ api_base_path }}/static/style.css">
+</head>
+<body>
+    <main class="container">
+        <h1>Downloader video / musica</h1>
+        <p class="subtitle">
+            Inserisci un link, scegli formato/risoluzione e scarica il file sul tuo PC.
+        </p>
+
+        <form id="lookupForm" class="card">
+            <label for="urlInput">URL del contenuto</label>
+            <input
+                type="url"
+                id="urlInput"
+                placeholder="https://..."
+                required
+                autocomplete="off"
+            >
+            <button type="submit" id="searchBtn">Carica formati</button>
+        </form>
+
+        <section id="formatsSection" class="card hidden">
+            <h2 id="videoTitle"></h2>
+            <label for="formatSelect">Formato disponibile</label>
+            <select id="formatSelect" size="10"></select>
+            <button type="button" id="downloadBtn">Scarica selezionato</button>
+            <p class="hint">
+                Nota: per alcuni formati ad alta risoluzione può essere necessario avere <code>ffmpeg</code> installato.
+            </p>
+        </section>
+
+        <p id="status" class="status"></p>
+    </main>
+
+    <script>
+        window.APP_API_BASE_PATH = {{ api_base_path|tojson }};
+    </script>
+    <script src="{{ api_base_path }}/static/app.js"></script>
+</body>
+</html>
