@@ -4,5 +4,9 @@ apt-get update && \
 apt-get install -y ffmpeg && \
 pip install -r requirements.txt
 """
+
 [deploy]
 startCommand = "python app.py"
+
+[build.env]
+PYTHON_VERSION = "3.11"
