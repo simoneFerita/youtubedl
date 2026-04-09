@@ -32,11 +32,7 @@ CORS(
 )
 
 # Regex per il selector dei formati
-SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,
-
-\[\]
-
-\(\):]+$")
+SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9+\-\/\.\,\[\]\(\):]+$")
 
 
 def _is_valid_url(url: str) -> bool:
