@@ -225,7 +225,7 @@ def download():
         return response
 
     # Cookie YouTube (file in youtubedl/cookies.txt)
-    cookies_path = Path("youtubedl/blob/main/cookies.txt")
+    cookies_path = Path("youtubedl/cookies.txt")
     use_cookies = cookies_path.exists()
 
     ydl_opts: dict = {
@@ -262,7 +262,7 @@ def cookie_status():
     - dimensione
     - tentativo di chiamata yt-dlp con cookies (senza download)
     """
-    cookies_path = Path("youtubedl/blob/main/cookies.txt")
+    cookies_path = Path("youtubedl/cookies.txt")
     exists = cookies_path.exists()
     size = cookies_path.stat().st_size if exists else 0
 
