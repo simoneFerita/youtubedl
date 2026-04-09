@@ -7,22 +7,23 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import yt_dlp
-from flask_cors import CORS
 from flask import (
     Flask,
-    after_this_request,
     jsonify,
     render_template,
     request,
     send_file,
     send_from_directory,
+    after_this_request,
 )
-
-app = Flask(__name__)
+from flask_cors import CORS
 
 # ---------------------------------------------------------
-# CORS
+# CONFIGURAZIONE FLASK
 # ---------------------------------------------------------
+
+app = Flask(__name__, static_folder="static", template_folder="templates")
+
 CORS_ORIGINS = [
     item.strip()
     for item in os.getenv("YTDL_CORS_ORIGINS", "*").split(",")
@@ -38,9 +39,6 @@ CORS(
     },
 )
 
-# ---------------------------------------------------------
-# VALIDAZIONI
-# ---------------------------------------------------------
 SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9\+\-\/\.\,
 
 \[\]
@@ -48,14 +46,15 @@ SELECTOR_PATTERN = re.compile(r"^[A-Za-z0-9\+\-\/\.\,
 \(\):]+$")
 
 
+# ---------------------------------------------------------
+# FUNZIONI DI SUPPORTO
+# ---------------------------------------------------------
+
 def _is_valid_url(url: str) -> bool:
     parsed = urlparse(url)
     return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
-# ---------------------------------------------------------
-# FORMAT HANDLING
-# ---------------------------------------------------------
 def _format_kind(fmt: dict) -> str:
     has_video = fmt.get("vcodec") != "none"
     has_audio = fmt.get("acodec") != "none"
@@ -95,9 +94,6 @@ def _build_selector(fmt: dict) -> str:
     return format_id
 
 
-# ---------------------------------------------------------
-# YT-DLP EXTRACTION
-# ---------------------------------------------------------
 def _extract_info(url: str) -> dict:
     ydl_opts = {
         "quiet": True,
@@ -118,7 +114,7 @@ def _extract_info(url: str) -> dict:
 
 
 def _serialized_formats(info: dict) -> list[dict]:
-    available_formats: list[dict] = []
+    available = []
 
     for fmt in info.get("formats", []):
         if not fmt.get("format_id"):
@@ -126,7 +122,7 @@ def _serialized_formats(info: dict) -> list[dict]:
         if fmt.get("vcodec") == "none" and fmt.get("acodec") == "none":
             continue
 
-        available_formats.append(
+        available.append(
             {
                 "format_id": str(fmt.get("format_id")),
                 "ext": fmt.get("ext") or "",
@@ -141,48 +137,42 @@ def _serialized_formats(info: dict) -> list[dict]:
             }
         )
 
-    available_formats.sort(
-        key=lambda item: (
-            item["kind"] != "solo audio",
-            item["height"],
-            item["fps"],
-            item["abr"],
-            item["filesize"],
+    available.sort(
+        key=lambda x: (
+            x["kind"] != "solo audio",
+            x["height"],
+            x["fps"],
+            x["abr"],
+            x["filesize"],
         ),
         reverse=True,
     )
 
-    return available_formats
+    return available
 
 
-# ---------------------------------------------------------
-# FILE PICKER
-# ---------------------------------------------------------
 def _pick_downloaded_file(temp_dir: Path, info: dict, ydl: yt_dlp.YoutubeDL) -> Path:
-    prepared_name = Path(ydl.prepare_filename(info))
-    if prepared_name.exists():
-        return prepared_name
+    prepared = Path(ydl.prepare_filename(info))
+    if prepared.exists():
+        return prepared
 
     for item in info.get("requested_downloads") or []:
-        maybe_path = item.get("filepath")
-        if maybe_path and Path(maybe_path).exists():
-            return Path(maybe_path)
+        fp = item.get("filepath")
+        if fp and Path(fp).exists():
+            return Path(fp)
 
-    produced_files = sorted(
+    produced = sorted(
         temp_dir.glob("*"),
-        key=lambda path: path.stat().st_mtime,
+        key=lambda p: p.stat().st_mtime,
         reverse=True,
     )
 
-    if not produced_files:
+    if not produced:
         raise FileNotFoundError("Nessun file scaricato.")
 
-    return produced_files[0]
+    return produced[0]
 
 
-# ---------------------------------------------------------
-# PATH BASE
-# ---------------------------------------------------------
 def _api_base_path() -> str:
     if request.path.startswith("/youtubedl"):
         return "/youtubedl"
@@ -192,8 +182,9 @@ def _api_base_path() -> str:
 
 
 # ---------------------------------------------------------
-# ROUTES
+# ROUTES FRONTEND
 # ---------------------------------------------------------
+
 @app.get("/")
 @app.get("/youtubedl")
 @app.get("/youtubedownload")
@@ -210,6 +201,7 @@ def static_alias(filename: str):
 # ---------------------------------------------------------
 # API: FORMATS
 # ---------------------------------------------------------
+
 @app.post("/api/formats")
 @app.post("/youtubedl/api/formats")
 @app.post("/youtubedownload/api/formats")
@@ -229,13 +221,14 @@ def get_formats():
             }
         )
     except Exception as exc:
-        message = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Impossibile leggere i formati: {message}"}), 400
+        msg = str(exc).strip().splitlines()[0]
+        return jsonify({"error": f"Impossibile leggere i formati: {msg}"}), 400
 
 
 # ---------------------------------------------------------
 # API: DOWNLOAD
 # ---------------------------------------------------------
+
 @app.post("/api/download")
 @app.post("/youtubedl/api/download")
 @app.post("/youtubedownload/api/download")
@@ -276,12 +269,13 @@ def download():
         )
 
     except Exception as exc:
-        message = str(exc).strip().splitlines()[0]
-        return jsonify({"error": f"Errore durante il download: {message}"}), 400
+        msg = str(exc).strip().splitlines()[0]
+        return jsonify({"error": f"Errore durante il download: {msg}"}), 400
 
 
 # ---------------------------------------------------------
-# MAIN
+# AVVIO (solo locale)
 # ---------------------------------------------------------
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8080)
