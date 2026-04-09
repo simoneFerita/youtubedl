@@ -215,6 +215,10 @@ def download():
         shutil.rmtree(temp_dir, ignore_errors=True)
         return response
 
+    cookies_path = Path("youtubedl/cookies.txt")
+use_cookies = cookies_path.exists()
+
+
     ydl_opts = {
     "quiet": True,
     "no_warnings": True,
